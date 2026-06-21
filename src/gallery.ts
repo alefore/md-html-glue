@@ -45,6 +45,27 @@ function closeFigure(figure: HTMLElement): void {
   }
 }
 
+let savedGridScrollY = 0;
+
+function showGrid(): void {
+  const main = document.querySelector('main');
+  if (!main) return;
+  main.classList.remove('large-image');
+  document.querySelectorAll<HTMLElement>('.image-widget.is-active')
+      .forEach(activeFigure => closeFigure(activeFigure));
+  window.scrollTo({top: savedGridScrollY, behavior: 'instant'});
+}
+
+function showImage(scrollToElement: HTMLElement): void {
+  const main = document.querySelector('main');
+  if (!main) return;
+  savedGridScrollY = window.scrollY;
+  main.classList.add('large-image');
+  setTimeout(() => {
+    scrollToElement.scrollIntoView({behavior: 'smooth', block: 'center'});
+  }, 50);
+}
+
 function upgradeImageToWidget(
     imgElement: HTMLImageElement, config: ImageConfig): void {
   const figure = document.createElement('figure');
@@ -80,6 +101,14 @@ function upgradeImageToWidget(
   imgElement.classList.add('clickable-image');
   imgElement.addEventListener('click', (e: MouseEvent) => {
     e.stopPropagation();
+
+    const main = document.querySelector('main');
+    if (main && !main.classList.contains('large-image')) {
+      showImage(figure);
+      return;
+    }
+
+    // Handle standard overlay toggling for the list view
     document.querySelectorAll<HTMLElement>('.image-widget.is-active')
         .forEach(activeFigure => {
           if (activeFigure !== figure) {
@@ -129,5 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', () => {
     document.querySelectorAll<HTMLElement>('.image-widget.is-active')
         .forEach(figure => closeFigure(figure));
+  });
+
+  document.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      const main = document.querySelector('main');
+      if (main && main.classList.contains('large-image')) {
+        showGrid();
+      } else {
+        document.querySelectorAll<HTMLElement>('.image-widget.is-active')
+            .forEach(figure => closeFigure(figure));
+      }
+    }
   });
 });
