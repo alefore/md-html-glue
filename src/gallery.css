@@ -184,3 +184,18 @@ main.large-image > h1, main.large-image > h2 {
 .menu-btn:active {
   transform: scale(0.98);
 }
+
+@media (max-width: 768px) {
+  main {
+    column-gap: 2px;
+    padding: 0 2px;
+  }
+
+  main > .gallery {
+    margin-bottom: 2px;
+  }
+
+  main.large-image > .gallery {
+    margin-bottom: 24px;
+  }
+}
