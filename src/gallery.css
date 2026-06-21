@@ -1,0 +1,142 @@
+div.gallery {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  grid-column: 1 / -1; /* Break out and span all 3 columns */
+}
+
+/* Container establishes the boundaries */
+.image-widget {
+  position: relative;
+  display: block;
+  width: fit-content;
+  max-width: 100%;        /* Prevents overflow on small screens */
+  margin: 0;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.hover-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+  color: #ffffff;
+  padding: 10px;
+  box-sizing: border-box;
+  text-align: center;
+
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+
+  pointer-events: none;
+}
+
+.image-widget img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+html {
+  scroll-snap-type: y proximity;
+  scroll-behavior: smooth;
+}
+
+.gallery {
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+h1, h2 {
+  scroll-snap-align: start;
+}
+
+.image-widget:hover .hover-caption {
+  opacity: 1;
+}
+
+.image-widget.is-active .hover-caption {
+  opacity: 0;
+}
+
+/* The Overlay - covers the image entirely */
+.image-widget .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75); /* Dark semi-transparent background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Hidden state */
+  opacity: 0;
+  pointer-events: none; /* Prevents clicks on hidden links */
+  transition: opacity 0.3s ease;
+}
+
+/* Active state (toggled via TypeScript) */
+.image-widget.is-active .overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.image-widget.is-active img {
+  opacity: 0.4; /* Dims the background image to make links pop */
+}
+
+/* Internal Menu Styling */
+.overlay-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+  width: 80%;
+  max-width: 250px;
+}
+
+.menu-title {
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 12px;
+}
+
+.menu-caption {
+  color: #a1a1aa;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 12px;
+}
+
+.menu-title:first-child {
+  margin-top: 0;
+}
+
+.menu-btn {
+  color: #ffffff;
+  text-decoration: none;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.menu-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.menu-btn:active {
+  transform: scale(0.98);
+}
