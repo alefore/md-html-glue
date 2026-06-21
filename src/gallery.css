@@ -32,10 +32,13 @@ main > .gallery {
   width: 100%;
   break-inside: avoid;
   margin: 0 0 16px 0;
+  vertical-align: top;
 }
 
 .gallery p {
   margin: 0;
+  line-height: 0;
+  display: block;
 }
 
 main.large-image {
@@ -137,6 +140,10 @@ main.large-image > h1, main.large-image > h2 {
 
 .image-widget.is-active img {
   opacity: 0.4;
+}
+
+.overlay-menu, .hover-caption {
+  line-height: 1.4;
 }
 
 .overlay-menu {
