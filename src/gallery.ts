@@ -59,7 +59,10 @@ function showGrid(): void {
 function showImage(scrollToElement: HTMLElement): void {
   const main = document.querySelector('main');
   if (!main) return;
-  savedGridScrollY = window.scrollY;
+  if (!main.classList.contains('large-image')) {
+    savedGridScrollY = window.scrollY;
+    history.pushState({galleryView: 'large-image'}, '');
+  }
   main.classList.add('large-image');
   setTimeout(() => {
     scrollToElement.scrollIntoView({behavior: 'smooth', block: 'center'});
@@ -160,11 +163,20 @@ document.addEventListener('DOMContentLoaded', () => {
         .forEach(figure => closeFigure(figure));
   });
 
+  window.addEventListener('popstate', (e: PopStateEvent) => {
+    if (!e.state || e.state.galleryView !== 'large-image') {
+      const main = document.querySelector('main');
+      if (main && main.classList.contains('large-image')) {
+        showGrid();
+      }
+    }
+  });
+
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       const main = document.querySelector('main');
       if (main && main.classList.contains('large-image')) {
-        showGrid();
+        history.back();
       } else {
         document.querySelectorAll<HTMLElement>('.image-widget.is-active')
             .forEach(figure => closeFigure(figure));
