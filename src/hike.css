@@ -16,3 +16,35 @@
   stroke-width: 6px;
   stroke-opacity: 1;
 }
+
+#hike-profile-time, #hike-profile-distance { margin: 1rem 0; }
+.hike-profile { width: 100%; display: block; }
+.hike-profile-line {
+  fill: none;
+  stroke: var(--text-accent);
+  stroke-width: 2px;
+}
+.hike-profile-area { fill: var(--text-accent); fill-opacity: 0.08; }
+.hike-profile-grid { stroke: var(--bg-mild); stroke-width: 1px; }
+.hike-profile-tick { stroke: var(--text-dim); }
+.hike-profile-ylabel {
+  font: 11px system-ui;
+  text-anchor: end;
+  dominant-baseline: middle;
+  fill: var(--text-dim);
+}
+.hike-profile-xlabel {
+  font: 11px system-ui;
+  text-anchor: middle;
+  fill: var(--text-dim);
+}
+.hike-profile-xtitle {
+  font: 11px system-ui;
+  text-anchor: middle;
+  fill: var(--text-dim);
+}
+.hike-profile-ytitle {
+  font: 11px system-ui;
+  text-anchor: middle;
+  fill: var(--text-dim);
+}
