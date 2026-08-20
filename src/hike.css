@@ -1,0 +1,6 @@
+@import url("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css");
+
+#hike-map {
+  height: 28rem;
+  border: 1px solid #d9d9d9;
+}
