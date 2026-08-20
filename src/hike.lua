@@ -9,7 +9,5 @@ function Pandoc(doc)
 
   table.insert(doc.blocks, pandoc.RawBlock("html", string.format(
     '<script type="application/gpx+xml" id="hike-data">\n%s</script>', gpx)))
-  table.insert(doc.blocks, pandoc.RawBlock("html",
-      '<script src="/hike.js"></script>'))
   return doc
 end
