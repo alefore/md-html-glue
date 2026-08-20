@@ -4,3 +4,15 @@
   height: 28rem;
   border: 1px solid #d9d9d9;
 }
+
+.hike-track-casing {
+  stroke: #fff;
+  stroke-width: 12px;
+  stroke-opacity: 0.8;
+}
+
+.hike-track {
+  stroke: #d40000;
+  stroke-width: 6px;
+  stroke-opacity: 1;
+}

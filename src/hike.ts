@@ -44,7 +44,9 @@ function renderHikeMap(): void {
        })
       .addTo(map);
 
-  const track = L.polyline(latLngs, {color: '#d40000', weight: 3}).addTo(map);
+  const casing =
+      L.polyline(latLngs, {className: 'hike-track-casing'}).addTo(map);
+  const track = L.polyline(latLngs, {className: 'hike-track'}).addTo(map);
   L.circleMarker(latLngs[0], {radius: 6, color: '#008000', fillOpacity: 1})
       .addTo(map)
       .bindTooltip('Start');
