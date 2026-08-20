@@ -20,8 +20,11 @@ function parseTrackPoints(dataIslandId: string): L.LatLng[] {
         `hike.js: data island #${dataIslandId} not found ` +
         `(page has scope "hike" but the build emitted no track data).`);
   }
-  const doc = new DOMParser().parseFromString(
-      `<root>${island.textContent}</root>`, 'application/xml');
+  const text = island.textContent?.trim() ?? '';
+  if (text === '') {
+    throw new Error(`hike.js: data island ${dataIslandId} is empty`);
+  }
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
   return Array.from(doc.getElementsByTagName('trkpt'))
       .map(
           (pt) => L.latLng(
