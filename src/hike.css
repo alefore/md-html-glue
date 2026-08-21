@@ -4,15 +4,20 @@
   height: 28rem;
   border: 1px solid #d9d9d9;
 }
-
 .hike-track-casing {
-  stroke: #fff;
+  stroke: #d40000;
   stroke-width: 12px;
   stroke-opacity: 0.8;
 }
-
+.hike-hour-boundary {
+  fill: #d40000;
+  fill-opacity: 1;
+  stroke: #ffffff;
+  stroke-width: 2px;
+  stroke-opacity: 1;
+}
 .hike-track {
-  stroke: #d40000;
+  stroke: #fff;
   stroke-width: 6px;
   stroke-opacity: 1;
 }
@@ -24,27 +29,22 @@
   stroke: var(--text-accent);
   stroke-width: 2px;
 }
-.hike-profile-area { fill: var(--text-accent); fill-opacity: 0.08; }
+.hike-profile-area { fill: var(--text-accent); fill-opacity: 0.5; }
 .hike-profile-grid { stroke: var(--bg-mild); stroke-width: 1px; }
-.hike-profile-tick { stroke: var(--text-dim); }
 .hike-profile-ylabel {
-  font: 11px system-ui;
   text-anchor: end;
   dominant-baseline: middle;
   fill: var(--text-dim);
 }
 .hike-profile-xlabel {
-  font: 11px system-ui;
   text-anchor: middle;
   fill: var(--text-dim);
 }
 .hike-profile-xtitle {
-  font: 11px system-ui;
   text-anchor: middle;
   fill: var(--text-dim);
 }
 .hike-profile-ytitle {
-  font: 11px system-ui;
   text-anchor: middle;
   fill: var(--text-dim);
 }
