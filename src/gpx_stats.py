@@ -34,30 +34,28 @@ class Split(NamedTuple):
 
   @staticmethod
   def print_header(show_moving_pct: bool) -> None:
+    # Standardized alignment widths for both header and rows
+    header = f"| {'Interval (km)':<13} | {'Start Time':<10} | {'Duration':<10} | {'Gain (m)':<8} | {'Loss (m)':<8}"
+    sep = f"|{'-'*15}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}"
+
     if show_moving_pct:
-      print(
-          f"| {'Interval (km)':<10} | {'Start Time':<10} | {'Duration':<10} | {'Gain (m)':<8} | {'Loss (m)':<8} | {'Moving %':<8} |"
-      )
-      print(f"|{'-'*12}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}|{'-'*10}|")
-    else:
-      print(
-          f"| {'Interval (km)':<10} | {'Start Time':<10} | {'Duration':<10} | {'Gain (m)':<8} | {'Loss (m)':<8} |"
-      )
-      print(f"|{'-'*15}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}|")
+      header += f" | {'Moving %':<8}"
+      sep += f"|{'-'*10}"
+
+    print(header + " |")
+    print(sep + "|")
 
   def print_row(self, show_moving_pct: bool) -> None:
     start_str = self.start.astimezone().strftime(
         "%H:%M:%S") if self.start else "N/A"
     duration_str = format_duration(self.duration)
 
+    row = f"| {self.label:<13} | {start_str:<10} | {duration_str:<10} | {int(self.gain):<8} | {int(self.loss):<8}"
+
     if show_moving_pct:
-      print(
-          f"| {self.label:<13} | {start_str:<10} | {duration_str:<10} | {int(self.gain):<8} | {int(self.loss):<8} | {f'{round(self.moving_pct)}%':<8} |"
-      )
-    else:
-      print(
-          f"| {self.label:<13} | {start_str:<10} | {duration_str:<10} | {int(self.gain):<8} | {int(self.loss):<8} |"
-      )
+      row += f" | {f'{round(self.moving_pct)}%':<8}"
+
+    print(row + " |")
 
 
 def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -156,6 +154,22 @@ def main() -> None:
 
   splits: list[Split] = []
 
+  def add_split(label: str, end_t: datetime | None) -> None:
+    """Helper to calculate final interval stats and append a Split."""
+    duration = (end_t - start_t) if end_t and start_t else timedelta(0)
+    total_time = int_moving_time + int_stopped_time
+    moving_pct = (int_moving_time / total_time * 100) if total_time > 0 else 0
+
+    splits.append(
+        Split(
+            label=label,
+            start=start_t,
+            duration=duration,
+            gain=int_gain,
+            loss=int_loss,
+            moving_pct=moving_pct,
+        ))
+
   for i in range(1, len(points)):
     prev_p = points[i - 1]
     curr_p = points[i]
@@ -183,25 +197,11 @@ def main() -> None:
 
     # Check if we crossed the interval boundary (1km)
     if int_dist >= INTERVAL_SIZE_M:
-      end_t = curr_p[3]
-      duration = (end_t - start_t) if end_t and start_t else timedelta(0)
-
-      total_time = int_moving_time + int_stopped_time
-      moving_pct = (int_moving_time / total_time * 100) if total_time > 0 else 0
-
-      splits.append(
-          Split(
-              label=str(interval_km),
-              start=start_t,
-              duration=duration,
-              gain=int_gain,
-              loss=int_loss,
-              moving_pct=moving_pct,
-          ))
+      add_split(str(interval_km), curr_p[3])
 
       # Reset / Setup for next interval
       interval_km += 1
-      start_t = end_t
+      start_t = curr_p[3]
 
       # Carry over the residual distance to the next interval
       int_dist -= INTERVAL_SIZE_M
@@ -212,21 +212,7 @@ def main() -> None:
 
   # Append remaining distance as the final interval
   if int_dist > 50:
-    end_t = points[-1][3]
-    duration = (end_t - start_t) if end_t and start_t else timedelta(0)
-    total_time = int_moving_time + int_stopped_time
-    moving_pct = (int_moving_time / total_time * 100) if total_time > 0 else 0
-    label = f"{interval_km} ({int_dist/1000:.2f}km)"
-
-    splits.append(
-        Split(
-            label=label,
-            start=start_t,
-            duration=duration,
-            gain=int_gain,
-            loss=int_loss,
-            moving_pct=moving_pct,
-        ))
+    add_split(f"{interval_km} ({int_dist/1000:.2f}km)", points[-1][3])
 
   if not splits:
     return
