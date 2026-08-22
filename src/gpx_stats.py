@@ -7,11 +7,57 @@ Usage: gpx_stats.py FILE.gpx
 import math
 import sys
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import NamedTuple
 
 GPX_NS = "{http://www.topografix.com/GPX/1/1}"
 INTERVAL_SIZE_M = 1000.0
 STOP_SPEED_THRESHOLD_M_S = 0.3  # roughly 1.1 km/h
+
+
+def format_duration(td: timedelta) -> str:
+  """Formats a timedelta into mm:ss or hh:mm:ss."""
+  m, s = divmod(int(td.total_seconds()), 60)
+  h, m = divmod(m, 60)
+  if h > 0:
+    return f"{h}h{m:02d}m{s:02d}s"
+  return f"{m}m{s:02d}s"
+
+
+class Split(NamedTuple):
+  label: str
+  start: datetime | None
+  duration: timedelta
+  gain: float
+  loss: float
+  moving_pct: float
+
+  @staticmethod
+  def print_header(show_moving_pct: bool) -> None:
+    if show_moving_pct:
+      print(
+          f"| {'Interval (km)':<10} | {'Start Time':<10} | {'Duration':<10} | {'Gain (m)':<8} | {'Loss (m)':<8} | {'Moving %':<8} |"
+      )
+      print(f"|{'-'*12}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}|{'-'*10}|")
+    else:
+      print(
+          f"| {'Interval':<10} | {'Start Time':<10} | {'Duration':<10} | {'Gain (m)':<8} | {'Loss (m)':<8} |"
+      )
+      print(f"|{'-'*12}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}|")
+
+  def print_row(self, show_moving_pct: bool) -> None:
+    start_str = self.start.astimezone().strftime(
+        "%H:%M:%S") if self.start else "N/A"
+    duration_str = format_duration(self.duration)
+
+    if show_moving_pct:
+      print(
+          f"| {self.label:<10} | {start_str:<10} | {duration_str:<10} | {int(self.gain):<8} | {int(self.loss):<8} | {f'{round(self.moving_pct)}%':<8} |"
+      )
+    else:
+      print(
+          f"| {self.label:<10} | {start_str:<10} | {duration_str:<10} | {int(self.gain):<8} | {int(self.loss):<8} |"
+      )
 
 
 def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -28,15 +74,6 @@ def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 def parse_time(text: str) -> datetime:
   return datetime.fromisoformat(text)
-
-
-def format_duration(seconds: float) -> str:
-  """Formats seconds into mm:ss or hh:mm:ss."""
-  m, s = divmod(int(seconds), 60)
-  h, m = divmod(m, 60)
-  if h > 0:
-    return f"{h}h{m:02d}m{s:02d}s"
-  return f"{m}m{s:02d}s"
 
 
 def main() -> None:
@@ -85,12 +122,6 @@ def main() -> None:
   # ---------------------------
   # Interval Splits Calculation
   # ---------------------------
-  print("### Splits")
-  print(
-      f"| {'Interval':<10} | {'Start Time':<10} | {'Duration':<10} | {'Gain (m)':<8} | {'Loss (m)':<8} | {'Moving %':<8} |"
-  )
-  print(f"|{'-'*12}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}|{'-'*10}|")
-
   interval_km = 1
   start_t = points[0][3]
 
@@ -99,6 +130,8 @@ def main() -> None:
   int_loss = 0.0
   int_moving_time = 0.0
   int_stopped_time = 0.0
+
+  splits: list[Split] = []
 
   for i in range(1, len(points)):
     prev_p = points[i - 1]
@@ -128,20 +161,20 @@ def main() -> None:
     # Check if we crossed the interval boundary (1km)
     if int_dist >= INTERVAL_SIZE_M:
       end_t = curr_p[3]
-      duration = (end_t - start_t).total_seconds() if end_t and start_t else 0
+      duration = (end_t - start_t) if end_t and start_t else timedelta(0)
 
-      # Calculate moving percentage
       total_time = int_moving_time + int_stopped_time
       moving_pct = (int_moving_time / total_time * 100) if total_time > 0 else 0
 
-      # Format outputs
-      start_str = start_t.astimezone().strftime(
-          "%H:%M:%S") if start_t else "N/A"
-      duration_str = format_duration(duration)
-
-      print(
-          f"| {interval_km:<10} | {start_str:<10} | {duration_str:<10} | {int(int_gain):<8} | {int(int_loss):<8} | {moving_pct:<7.0f}% |"
-      )
+      splits.append(
+          Split(
+              label=str(interval_km),
+              start=start_t,
+              duration=duration,
+              gain=int_gain,
+              loss=int_loss,
+              moving_pct=moving_pct,
+          ))
 
       # Reset / Setup for next interval
       interval_km += 1
@@ -154,19 +187,36 @@ def main() -> None:
       int_moving_time = 0.0
       int_stopped_time = 0.0
 
-  # Print any remaining distance as the final interval
-  if int_dist > 50:  # Only print if there's a meaningful distance left (> 50m)
+  # Append remaining distance as the final interval
+  if int_dist > 50:
     end_t = points[-1][3]
-    duration = (end_t - start_t).total_seconds() if end_t and start_t else 0
+    duration = (end_t - start_t) if end_t and start_t else timedelta(0)
     total_time = int_moving_time + int_stopped_time
     moving_pct = (int_moving_time / total_time * 100) if total_time > 0 else 0
-    start_str = start_t.astimezone().strftime("%H:%M:%S") if start_t else "N/A"
-    duration_str = format_duration(duration)
     label = f"{interval_km} ({int_dist/1000:.2f}km)"
 
-    print(
-        f"| {label:<10} | {start_str:<10} | {duration_str:<10} | {int(int_gain):<8} | {int(int_loss):<8} | {moving_pct:<7.1f}% |"
-    )
+    splits.append(
+        Split(
+            label=label,
+            start=start_t,
+            duration=duration,
+            gain=int_gain,
+            loss=int_loss,
+            moving_pct=moving_pct,
+        ))
+
+  if not splits:
+    return
+
+  # ---------------------------
+  # Render Table
+  # ---------------------------
+  show_moving_pct = any(round(s.moving_pct) < 100 for s in splits)
+
+  print("### Splits")
+  Split.print_header(show_moving_pct)
+  for s in splits:
+    s.print_row(show_moving_pct)
 
 
 if __name__ == "__main__":
