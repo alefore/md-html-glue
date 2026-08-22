@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print start time, end time, total distance, and 1km splits of a GPX file.
+"""Print start time, end time, total distance, duration, average speed, and 1km splits of a GPX file.
 
 Usage: gpx_stats.py FILE.gpx
 """
@@ -41,9 +41,9 @@ class Split(NamedTuple):
       print(f"|{'-'*12}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}|{'-'*10}|")
     else:
       print(
-          f"| {'Interval':<10} | {'Start Time':<10} | {'Duration':<10} | {'Gain (m)':<8} | {'Loss (m)':<8} |"
+          f"| {'Interval (km)':<10} | {'Start Time':<10} | {'Duration':<10} | {'Gain (m)':<8} | {'Loss (m)':<8} |"
       )
-      print(f"|{'-'*12}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}|")
+      print(f"|{'-'*15}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}|")
 
   def print_row(self, show_moving_pct: bool) -> None:
     start_str = self.start.astimezone().strftime(
@@ -52,11 +52,11 @@ class Split(NamedTuple):
 
     if show_moving_pct:
       print(
-          f"| {self.label:<10} | {start_str:<10} | {duration_str:<10} | {int(self.gain):<8} | {int(self.loss):<8} | {f'{round(self.moving_pct)}%':<8} |"
+          f"| {self.label:<13} | {start_str:<10} | {duration_str:<10} | {int(self.gain):<8} | {int(self.loss):<8} | {f'{round(self.moving_pct)}%':<8} |"
       )
     else:
       print(
-          f"| {self.label:<10} | {start_str:<10} | {duration_str:<10} | {int(self.gain):<8} | {int(self.loss):<8} |"
+          f"| {self.label:<13} | {start_str:<10} | {duration_str:<10} | {int(self.gain):<8} | {int(self.loss):<8} |"
       )
 
 
@@ -117,7 +117,30 @@ def main() -> None:
 
   print(f"* Start: {fmt(times[0]) if times else 'n/a'}")
   print(f"* End: {fmt(times[-1]) if times else 'n/a'}")
-  print(f"* Distance: {total_dist_m / 1000:.2f} km\n")
+  print(f"* Distance: {total_dist_m / 1000:.2f} km")
+
+  if len(times) >= 2:
+    total_duration = times[-1] - times[0]
+    duration_secs = total_duration.total_seconds()
+
+    print(f"* Duration: {format_duration(total_duration)}")
+
+    if duration_secs > 0 and total_dist_m > 0:
+      dist_km = total_dist_m / 1000.0
+      pace_secs_per_km = duration_secs / dist_km
+      pace_m, pace_s = divmod(int(pace_secs_per_km), 60)
+      speed_kmh = dist_km / (duration_secs / 3600.0)
+
+      print(
+          f"* Average speed: {pace_m}m{pace_s:02d}s / km ({speed_kmh:.2f} km / h)"
+      )
+    else:
+      print("* Average speed: n/a")
+  else:
+    print("* Duration: n/a")
+    print("* Average speed: n/a")
+
+  print()
 
   # ---------------------------
   # Interval Splits Calculation
