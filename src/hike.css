@@ -22,29 +22,32 @@
   stroke-opacity: 1;
 }
 
-#hike-profile-time, #hike-profile-distance { margin: 1rem 0; }
-.hike-profile { width: 100%; display: block; }
-.hike-profile-line {
+svg#hike-plot {
+  margin: 1rem 0;
+  width: 100%;
+  display: block;
+}
+.hike-plot-line {
   fill: none;
   stroke: var(--text-accent);
   stroke-width: 2px;
 }
-.hike-profile-area { fill: var(--text-accent); fill-opacity: 0.5; }
-.hike-profile-grid { stroke: var(--bg-mild); stroke-width: 1px; }
-.hike-profile-ylabel {
+.hike-plot-area { fill: var(--text-accent); fill-opacity: 0.5; }
+.hike-plot-grid { stroke: var(--bg-mild); stroke-width: 1px; }
+.hike-plot-ylabel {
   text-anchor: end;
   dominant-baseline: middle;
   fill: var(--text-dim);
 }
-.hike-profile-xlabel {
+.hike-plot-xlabel {
   text-anchor: middle;
   fill: var(--text-dim);
 }
-.hike-profile-xtitle {
+.hike-plot-xtitle {
   text-anchor: middle;
   fill: var(--text-dim);
 }
-.hike-profile-ytitle {
+.hike-plot-ytitle {
   text-anchor: middle;
   fill: var(--text-dim);
 }

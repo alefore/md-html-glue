@@ -63,29 +63,26 @@ function cumulativeDistances(points: TrackPoint[]): number[] {
   return result;
 }
 
-// Returns the container inserted before the second <h2>, holding the map
-// and both profiles.
-function insertContainers(): {
-  mapDiv: HTMLElement; timeDiv: HTMLElement; distanceDiv: HTMLElement;
-  progressDiv: HTMLElement;
-} {
-  const headers = document.getElementsByTagName('h2');
-  if (headers.length < 2) {
-    throw new Error(
-        `hike.js: expected at least two <h2> headers to place ` +
-        `the map, found ${headers.length}.`);
+// Pace in seconds / km.
+function secondsPerKm(points: TrackPoint[]): number[] {
+  const result = [0];
+  for (let i = 1; i < points.length; i++) {
+    const distanceKm = points[i].latLng.distanceTo(points[i - 1].latLng) / 1000;
+    const timeDistanceSeconds =
+        Math.max(0, points[i].time - points[i - 1].time) / 1000;
+    result.push(timeDistanceSeconds / distanceKm);
   }
-  const make = (id: string): HTMLElement => {
-    const div = document.createElement('div');
-    div.id = id;
-    return div;
-  };
-  const mapDiv = make('hike-map');
-  const timeDiv = make('hike-profile-time');
-  const distanceDiv = make('hike-profile-distance');
-  const progressDiv = make('hike-profile-progress');
-  headers[1].before(mapDiv, timeDiv, distanceDiv, progressDiv);
-  return {mapDiv, timeDiv, distanceDiv, progressDiv};
+  // Repeating the first value is much more useful than inserting a 0.
+  result[0] = result[1];
+  return result;
+}
+
+function smooth(points: values[]) {
+  let current = points[0];
+  return points.map((p) => {
+    current = current * 0.5 + p * 0.5;
+    return current;
+  });
 }
 
 function renderMap(mapDiv: HTMLElement, points: TrackPoint[]): void {
@@ -140,6 +137,7 @@ function renderMap(mapDiv: HTMLElement, points: TrackPoint[]): void {
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 interface Series {
+  divId: string;
   xs: number[];  // one x per track point, ascending
   ys: number[];  // y value per point (altitude, distance, ...)
   xTickFormat: (x: number) => string;
@@ -159,7 +157,7 @@ function niceStep(range: number, target: number): number {
   return 10 * pow;
 }
 
-function renderProfile(container: HTMLElement, series: Series): void {
+function renderProfile(containerDiv: HTMLElement, series: Series): void {
   const width = 700, height = 220;
   const margin = {top: 12, right: 16, bottom: 36, left: 90};
   const plotW = width - margin.left - margin.right;
@@ -177,7 +175,7 @@ function renderProfile(container: HTMLElement, series: Series): void {
 
   const svg = document.createElementNS(SVG_NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.classList.add('hike-profile');
+  svg.classList.add('hike-plot');
 
   const el =
       (name: string, attrs: Record<string, string>, textContent?: string):
@@ -199,12 +197,12 @@ function renderProfile(container: HTMLElement, series: Series): void {
       x2: String(width - margin.right),
       y1: String(toY(y)),
       y2: String(toY(y)),
-      class: 'hike-profile-grid',
+      class: 'hike-plot-grid',
     });
     el('text', {
       x: String(margin.left - 6),
       y: String(toY(y)),
-      class: 'hike-profile-ylabel',
+      class: 'hike-plot-ylabel',
     },
        yTickFormat(y));
   }
@@ -217,27 +215,27 @@ function renderProfile(container: HTMLElement, series: Series): void {
       x2: String(toX(x)),
       y1: String(margin.top),
       y2: String(margin.top + plotH),
-      class: 'hike-profile-grid',
+      class: 'hike-plot-grid',
     });
     if (x > x0)
       el('text', {
         x: String(toX(x)),
         y: String(margin.top + plotH + 16),
-        class: 'hike-profile-xlabel',
+        class: 'hike-plot-xlabel',
       },
          series.xTickFormat(x));
   }
   el('text', {
     x: String(margin.left + plotW / 2),
     y: String(height - 4),
-    class: 'hike-profile-xtitle',
+    class: 'hike-plot-xtitle',
   },
      series.xLabel);
   el('text', {
     x: '14',
     y: String(margin.top + plotH / 2),
     transform: `rotate(-90 14 ${margin.top + plotH / 2})`,
-    class: 'hike-profile-ytitle',
+    class: 'hike-plot-ytitle',
   },
      series.yLabel);
 
@@ -249,16 +247,14 @@ function renderProfile(container: HTMLElement, series: Series): void {
   el('polygon', {
     points: `${toX(xMin).toFixed(1)},${toY(yMin).toFixed(1)} ${line} ` +
         `${toX(xMax).toFixed(1)},${toY(yMin).toFixed(1)}`,
-    class: 'hike-profile-area',
+    class: 'hike-plot-area',
   });
-  el('polyline', {points: line, class: 'hike-profile-line'});
+  el('polyline', {points: line, class: 'hike-plot-line'});
 
-  container.appendChild(svg);
+  containerDiv.appendChild(svg);
 }
 
-function renderProfiles(
-    timeDiv: HTMLElement, distanceDiv: HTMLElement, progressDiv: HTMLElement,
-    points: TrackPoint[]): void {
+function renderProfiles(containerDiv: HTMLElement, points: TrackPoint[]): void {
   const eles = points.map((p) => p.ele);
 
   const t0 = points[0].time;
@@ -271,7 +267,8 @@ function renderProfiles(
       d % 1 === 0 ? String(d) : d.toFixed(1);
   const km = cumulativeDistances(points).map((d) => d / 1000);
 
-  renderProfile(timeDiv, {
+  renderProfile(containerDiv, {
+    divId: 'hike-time-altitude',
     xs: minutes,
     ys: eles,
     xTickStep: niceStep(minutes[minutes.length - 1], 6),
@@ -280,7 +277,8 @@ function renderProfiles(
     yLabel: 'Altitude (masl)',
   });
 
-  renderProfile(distanceDiv, {
+  renderProfile(containerDiv, {
+    divId: 'hike-distance-altitude',
     xs: km,
     ys: eles,
     xTickStep: niceStep(km[km.length - 1], 6),
@@ -289,7 +287,8 @@ function renderProfiles(
     yLabel: 'Altitude (masl)',
   });
 
-  renderProfile(progressDiv, {
+  renderProfile(containerDiv, {
+    divId: 'hike-time-distance',
     xs: minutes,
     ys: km,
     xTickStep: niceStep(minutes[minutes.length - 1], 6),
@@ -298,13 +297,44 @@ function renderProfiles(
     yTickFormat: formatKm,
     yLabel: 'Distance (km)',
   });
+
+  const formatPace = (secondsPerKm: number): string => {
+    const total = Math.round(secondsPerKm);
+    const minutes = Math.floor(total / 60);
+    const seconds = total % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  };
+
+  renderProfile(containerDiv, {
+    divId: 'hike-time-pace',
+    xs: minutes,
+    ys: smooth(secondsPerKm(points)),
+    xTickStep: niceStep(minutes[minutes.length - 1], 6),
+    xTickFormat: formatTime,
+    xLabel: 'Time (h:mm)',
+    yTickFormat: formatPace,
+    yLabel: 'Pace (time/km)',
+  });
 }
 
 function main(): void {
   const points = parseTrack('hike-data');
-  const {mapDiv, timeDiv, distanceDiv, progressDiv} = insertContainers();
-  renderMap(mapDiv, points);
-  renderProfiles(timeDiv, distanceDiv, progressDiv, points);
+
+  const container =
+      Object.assign(document.createElement('div'), {id: 'hike-views'});
+  const headers = document.getElementsByTagName('h2');
+  if (headers.length < 2) {
+    throw new Error(
+        `hike.js: expected at least two <h2> headers to place ` +
+        `the map, found ${headers.length}.`);
+  }
+  headers[1].before(container);
+
+  renderMap(
+      container.appendChild(
+          Object.assign(document.createElement('div'), {id: 'hike-map'})),
+      points);
+  renderProfiles(container, points);
 }
 
 main();
