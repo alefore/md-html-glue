@@ -69,6 +69,10 @@ function showImage(scrollToElement: HTMLElement): void {
   }, 50);
 }
 
+function isInPhotosGrid(img: HTMLImageElement): boolean {
+  return img.closest('div.photos-grid') !== null;
+}
+
 function upgradeImageToWidget(
     imgElement: HTMLImageElement, config: ImageConfig): void {
   const figure = document.createElement('figure');
@@ -106,7 +110,8 @@ function upgradeImageToWidget(
     e.stopPropagation();
 
     const main = document.querySelector('main');
-    if (main && !main.classList.contains('large-image')) {
+    if (isInPhotosGrid(imgElement) && main &&
+        !main.classList.contains('large-image')) {
       showImage(figure);
       return;
     }

@@ -1,38 +1,42 @@
-main {
-  display: block;
+.photos-line, .photos-grid {
+  grid-column: 1 / -1;
   box-sizing: border-box;
   padding: 0 1rem;
   width: 100%;
+}
+
+.photos-grid {
+  display: block;
   column-count: 3;
   column-gap: 16px;
 }
 
-@media (min-width: 1800px) { main { column-count: 4; } }
-@media (min-width: 2400px) { main { column-count: 5; } }
-@media (min-width: 3000px) { main { column-count: 6; } }
-
-main > h1,
-main > h2,
-main > h3,
-main > p,
-main > ul,
-main > ol,
-main > blockquote {
-  column-span: all;
-  display: block;
-  max-width: 72ch;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 24px;
+.photos-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
 }
 
-main > .gallery {
-  column-span: none;
+@media (min-width: 1800px) { .photos-grid { column-count: 4; } }
+@media (min-width: 2400px) { .photos-grid { column-count: 5; } }
+@media (min-width: 3000px) { .photos-grid { column-count: 6; } }
+
+.photos-grid > .gallery {
+  column-span: all;
   display: inline-block;
   width: 100%;
   break-inside: avoid;
   margin: 0 0 16px 0;
   vertical-align: top;
+}
+
+.photos-line > .gallery {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
 }
 
 .gallery p {
@@ -41,21 +45,14 @@ main > .gallery {
   display: block;
 }
 
-main.large-image {
+main.large-image .photos-grid {
   display: flex;
   column-count: auto;
   flex-direction: column;
   align-items: center;
 }
 
-main.large-image > h1,
-main.large-image > h2,
-main.marge-image > :not(.gallery) {
-  aligh-self: flex-start;
-  width: 100%;
-}
-
-main.large-image > .gallery {
+main.large-image .gallery {
   width: fit-content;
   margin: 0 auto 40px auto;
 }
@@ -101,12 +98,12 @@ html:has(main.large-image) {
   scroll-behavior: smooth;
 }
 
-main.large-image > .gallery {
+main.large-image .gallery {
   scroll-snap-align: center;
   scroll-snap-stop: always;
 }
 
-main.large-image > h1, main.large-image > h2 {
+main.large-image h1, main.large-image h2 {
   scroll-snap-align: start;
 }
 
@@ -193,16 +190,19 @@ main.large-image > h1, main.large-image > h2 {
 }
 
 @media (max-width: 768px) {
-  main {
+  .photos-grid {
     column-gap: 2px;
-    padding: 0 2px;
   }
 
-  main > .gallery {
+  .photos-line {
+    gap: 2px;
+  }
+
+  .photos-grid .gallery {
     margin-bottom: 2px;
   }
 
-  main.large-image > .gallery {
+  main.large-image .gallery {
     margin-bottom: 24px;
   }
 }
