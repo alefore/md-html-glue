@@ -36,11 +36,11 @@ class Split(NamedTuple):
   def print_header(show_moving_pct: bool) -> None:
     # Standardized alignment widths for both header and rows
     header = f"| {'Interval (km)':<13} | {'Start Time':<10} | {'Duration':<10} | {'Gain (m)':<8} | {'Loss (m)':<8}"
-    sep = f"|{'-'*15}|{'-'*12}|{'-'*12}|{'-'*10}|{'-'*10}"
+    sep = f"|{'-'*14}:|{'-'*11}:|{'-'*11}:|{'-'*9}:|{'-'*9}:"
 
     if show_moving_pct:
       header += f" | {'Moving %':<8}"
-      sep += f"|{'-'*10}"
+      sep += f"|{'-'*9}:"
 
     print(header + " |")
     print(sep + "|")
