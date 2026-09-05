@@ -256,17 +256,15 @@ function renderGraphSvg(
   const km = cumulativeDistances(points).map((d) => d / 1000);
   const pace = smooth(secondsPerKm(points));
 
-  const xValue = ({
-    time: (index: number) => (points[index].time - t0) / 60000,
-    distance: (index: number) => km[index],
-  } satisfies Record<XAxis, (index: number) => number>)[xAxis];
-  const yValue = ({
+  const accessors = {
     time: (index: number) => (points[index].time - t0) / 60000,
     distance: (index: number) => km[index],
     altitude: (index: number) => points[index].ele,
     pace: (index: number) => pace[index],
     speed: (index: number) => (60 * 60) / pace[index],
-  } satisfies Record<YAxis, (index: number) => number>)[yAxis];
+  } satisfies Record<XAxis|YAxis, (index: number) => number>;
+  const xValue = accessors[xAxis];
+  const yValue = accessors[yAxis];
 
   const data = {
     [yAxis]: points.map((p, i) => [xValue(i), yValue(i)] as [number, number])
