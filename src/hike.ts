@@ -8,6 +8,7 @@
 // <h2> headers; the map and profiles are inserted before the second <h2>.
 
 import * as L from 'leaflet';
+import {lineplot, SvgWriter, XYPlot} from 'mini_svg';
 
 interface TrackPoint {
   latLng: L.LatLng;
@@ -70,14 +71,17 @@ function secondsPerKm(points: TrackPoint[]): number[] {
     const distanceKm = points[i].latLng.distanceTo(points[i - 1].latLng) / 1000;
     const timeDistanceSeconds =
         Math.max(0, points[i].time - points[i - 1].time) / 1000;
-    result.push(timeDistanceSeconds / distanceKm);
+    if (distanceKm === 0)
+      result.push(result[result.length - 1]);
+    else
+      result.push(timeDistanceSeconds / distanceKm);
   }
   // Repeating the first value is much more useful than inserting a 0.
   result[0] = result[1];
   return result;
 }
 
-function smooth(points: values[]) {
+function smooth(points: number[]) {
   let current = points[0];
   return points.map((p) => {
     current = current * 0.5 + p * 0.5;
@@ -157,164 +161,100 @@ function niceStep(range: number, target: number): number {
   return 10 * pow;
 }
 
-function renderProfile(containerDiv: HTMLElement, series: Series): void {
-  const width = 700, height = 220;
-  const margin = {top: 12, right: 16, bottom: 36, left: 90};
-  const plotW = width - margin.left - margin.right;
-  const plotH = height - margin.top - margin.bottom;
+type XAxis = 'time'|'distance';
+type YAxis = 'time'|'distance'|'altitude'|'pace';
 
-  const xMin = series.xs[0], xMax = series.xs[series.xs.length - 1];
-  const yStep = niceStep(Math.max(...series.ys) - Math.min(...series.ys), 5);
-  const yMin = Math.floor(Math.min(...series.ys) / yStep) * yStep;
-  const yMax = Math.ceil(Math.max(...series.ys) / yStep) * yStep;
+const X_OPTIONS: ReadonlyArray<[XAxis, string]> = [
+  ['time', 'Time'],
+  ['distance', 'Distance'],
+];
 
-  const toX = (x: number): number =>
-      margin.left + ((x - xMin) / (xMax - xMin)) * plotW;
-  const toY = (y: number): number =>
-      margin.top + (1 - (y - yMin) / (yMax - yMin)) * plotH;
+const Y_OPTIONS: ReadonlyArray<[YAxis, string]> = [
+  ['time', 'Time'],
+  ['distance', 'Distance'],
+  ['altitude', 'Altitude'],
+  ['pace', 'Pace'],
+];
 
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.classList.add('hike-plot');
-
-  const el =
-      (name: string, attrs: Record<string, string>, textContent?: string):
-          SVGElement => {
-            const e = document.createElementNS(SVG_NS, name);
-            for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
-            if (textContent !== undefined) e.textContent = textContent;
-            svg.appendChild(e);
-            return e;
-          };
-
-  // Horizontal gridlines + y labels.
-  const yTickFormat = series.yTickFormat ?? ((y: number) => String(y));
-  const yTicks = Math.round((yMax - yMin) / yStep);
-  for (let i = 0; i <= yTicks; i++) {
-    const y = yMin + i * yStep;
-    el('line', {
-      x1: String(margin.left),
-      x2: String(width - margin.right),
-      y1: String(toY(y)),
-      y2: String(toY(y)),
-      class: 'hike-plot-grid',
-    });
-    el('text', {
-      x: String(margin.left - 6),
-      y: String(toY(y)),
-      class: 'hike-plot-ylabel',
-    },
-       yTickFormat(y));
-  }
-
-  // X ticks + labels.
-  const x0 = Math.ceil(xMin / series.xTickStep) * series.xTickStep;
-  for (let x = x0; x <= xMax; x += series.xTickStep) {
-    el('line', {
-      x1: String(toX(x)),
-      x2: String(toX(x)),
-      y1: String(margin.top),
-      y2: String(margin.top + plotH),
-      class: 'hike-plot-grid',
-    });
-    if (x > x0)
-      el('text', {
-        x: String(toX(x)),
-        y: String(margin.top + plotH + 16),
-        class: 'hike-plot-xlabel',
-      },
-         series.xTickFormat(x));
-  }
-  el('text', {
-    x: String(margin.left + plotW / 2),
-    y: String(height - 4),
-    class: 'hike-plot-xtitle',
-  },
-     series.xLabel);
-  el('text', {
-    x: '14',
-    y: String(margin.top + plotH / 2),
-    transform: `rotate(-90 14 ${margin.top + plotH / 2})`,
-    class: 'hike-plot-ytitle',
-  },
-     series.yLabel);
-
-  // Filled area under the curve, then the curve itself.
-  const line =
-      series.xs
-          .map((x, i) => `${toX(x).toFixed(1)},${toY(series.ys[i]).toFixed(1)}`)
-          .join(' ');
-  el('polygon', {
-    points: `${toX(xMin).toFixed(1)},${toY(yMin).toFixed(1)} ${line} ` +
-        `${toX(xMax).toFixed(1)},${toY(yMin).toFixed(1)}`,
-    class: 'hike-plot-area',
+function createSelect<T extends string>(
+    labelText: string,
+    options: ReadonlyArray<[T, string]>,
+    ): {label: HTMLLabelElement; select: HTMLSelectElement} {
+  const label = document.createElement('label');
+  label.append(`${labelText} `);
+  const select = label.appendChild(document.createElement('select'));
+  options.forEach(([value, text]) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = text;
+    select.appendChild(option);
   });
-  el('polyline', {points: line, class: 'hike-plot-line'});
-
-  containerDiv.appendChild(svg);
+  return {label, select};
 }
 
-function renderProfiles(containerDiv: HTMLElement, points: TrackPoint[]): void {
-  const eles = points.map((p) => p.ele);
+function newGraph(containerDiv: HTMLDivElement, points: TrackPoint[]): void {
+  const form = containerDiv.appendChild(document.createElement('form'));
+  const graph = containerDiv.appendChild(document.createElement('div'));
+  graph.classList.add('hike-plot');
 
+  const x = createSelect('X', X_OPTIONS);
+  const y = createSelect('Y', Y_OPTIONS);
+  form.append(x.label, '\n', y.label);
+
+  const update = () => {
+    renderGraphSvg(
+        graph, x.select.value as XAxis, y.select.value as YAxis, points);
+  };
+  form.addEventListener('change', update);
+  update();
+}
+
+export function renderGraphForm(
+    containerDiv: HTMLDivElement, points: TrackPoint[]): void {
+  containerDiv
+      .appendChild(Object.assign(document.createElement('button'), {
+        textContent: 'Additional Graph',
+        onclick: (event: MouseEvent) => newGraph(containerDiv, points)
+      }))
+      .click();
+}
+
+function renderGraphSvg(
+    graphDiv: HTMLElement, xAxis: XAxis, yAxis: YAxis,
+    points: TrackPoint[]): void {
   const t0 = points[0].time;
-  const minutes = points.map((p) => (p.time - t0) / 60000);
-  const formatTime = (m: number): string => {
-    const h = Math.floor(m / 60);
-    return `${h}:${String(Math.round(m % 60)).padStart(2, '0')}`;
-  };
-  const formatKm = (d: number): string =>
-      d % 1 === 0 ? String(d) : d.toFixed(1);
   const km = cumulativeDistances(points).map((d) => d / 1000);
+  const pace = smooth(secondsPerKm(points));
 
-  renderProfile(containerDiv, {
-    divId: 'hike-time-altitude',
-    xs: minutes,
-    ys: eles,
-    xTickStep: niceStep(minutes[minutes.length - 1], 6),
-    xTickFormat: formatTime,
-    xLabel: 'Time (h:mm)',
-    yLabel: 'Altitude (masl)',
-  });
+  const xValue = ({
+    time: (index: number) => (points[index].time - t0) / 60000,
+    distance: (index: number) => km[index],
+  } satisfies Record<XAxis, (index: number) => number>)[xAxis];
+  const yValue = ({
+    time: (index: number) => (points[index].time - t0) / 60000,
+    distance: (index: number) => km[index],
+    altitude: (index: number) => points[index].ele,
+    pace: (index: number) => pace[index]
+  } satisfies Record<YAxis, (index: number) => number>)[yAxis];
 
-  renderProfile(containerDiv, {
-    divId: 'hike-distance-altitude',
-    xs: km,
-    ys: eles,
-    xTickStep: niceStep(km[km.length - 1], 6),
-    xTickFormat: formatKm,
-    xLabel: 'Distance (km)',
-    yLabel: 'Altitude (masl)',
-  });
-
-  renderProfile(containerDiv, {
-    divId: 'hike-time-distance',
-    xs: minutes,
-    ys: km,
-    xTickStep: niceStep(minutes[minutes.length - 1], 6),
-    xTickFormat: formatTime,
-    xLabel: 'Time (h:mm)',
-    yTickFormat: formatKm,
-    yLabel: 'Distance (km)',
-  });
-
-  const formatPace = (secondsPerKm: number): string => {
-    const total = Math.round(secondsPerKm);
-    const minutes = Math.floor(total / 60);
-    const seconds = total % 60;
-    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  const data = {
+    [yAxis]: points.map((p, i) => [xValue(i), yValue(i)] as [number, number])
   };
-
-  renderProfile(containerDiv, {
-    divId: 'hike-time-pace',
-    xs: minutes,
-    ys: smooth(secondsPerKm(points)),
-    xTickStep: niceStep(minutes[minutes.length - 1], 6),
-    xTickFormat: formatTime,
-    xLabel: 'Time (h:mm)',
-    yTickFormat: formatPace,
-    yLabel: 'Pace (time/km)',
-  });
+  graphDiv.innerHTML = lineplot(
+      new SvgWriter({width: 700, height: 220}), new XYPlot({
+        xLabel: xAxis,
+        yLabel: yAxis,
+        xAxisValues: {
+          maxCount: 10,
+          // timeFormat: xAxis === 'time' ? {timeStyle: 'short'} : undefined
+        },
+        yAxisValues: {
+          maxCount: 10,
+          // timeFormat: yAxis === 'time' ? {timeStyle: 'short'} : undefined
+        },
+        margins: {top: 12, bottom: 36, left: 60, right: 16}
+      }),
+      data);
 }
 
 function main(): void {
@@ -334,7 +274,7 @@ function main(): void {
       container.appendChild(
           Object.assign(document.createElement('div'), {id: 'hike-map'})),
       points);
-  renderProfiles(container, points);
+  renderGraphForm(container, points);
 }
 
 main();

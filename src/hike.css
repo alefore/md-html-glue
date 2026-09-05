@@ -22,32 +22,42 @@
   stroke-opacity: 1;
 }
 
-svg#hike-plot {
+div.hike-plot svg {
   margin: 1rem 0;
   width: 100%;
   display: block;
 }
-.hike-plot-line {
+
+:root {
+  --color-lin: rgba(173, 216, 230, 0.7);
+  --color-exp: rgba(255, 182, 193, 0.7);
+}
+
+div.hike-plot path {
   fill: none;
-  stroke: var(--text-accent);
+  stroke: var(--color-lin);
   stroke-width: 2px;
 }
-.hike-plot-area { fill: var(--text-accent); fill-opacity: 0.5; }
-.hike-plot-grid { stroke: var(--bg-mild); stroke-width: 1px; }
-.hike-plot-ylabel {
+div.hike-plot rect.labels-lin {
+  fill: var(--color-lin);
+  stroke-width: 0;
+}
+div.hike-plot rect.labels-exp {
+  fill: var(--color-exp);
+  stroke-width: 0;
+}
+
+div.hike-plot line.tick {
+  stroke: var(--bg-mild);
+  stroke-width: 1px;
+}
+div.hike-plot text.label-y {
   text-anchor: end;
   dominant-baseline: middle;
-  fill: var(--text-dim);
 }
-.hike-plot-xlabel {
+div.hike-plot text.label-x {
   text-anchor: middle;
-  fill: var(--text-dim);
 }
-.hike-plot-xtitle {
-  text-anchor: middle;
-  fill: var(--text-dim);
-}
-.hike-plot-ytitle {
-  text-anchor: middle;
+div.hike-plot text {
   fill: var(--text-dim);
 }
