@@ -162,7 +162,7 @@ function niceStep(range: number, target: number): number {
 }
 
 type XAxis = 'time'|'distance';
-type YAxis = 'time'|'distance'|'altitude'|'pace';
+type YAxis = 'time'|'distance'|'altitude'|'pace'|'speed';
 
 const X_OPTIONS: ReadonlyArray<[XAxis, string]> = [
   ['time', 'Time'],
@@ -173,7 +173,8 @@ const Y_OPTIONS: ReadonlyArray<[YAxis, string]> = [
   ['time', 'Time'],
   ['distance', 'Distance'],
   ['altitude', 'Altitude'],
-  ['pace', 'Pace'],
+  ['pace', 'Pace (time/km)'],
+  ['speed', 'Speed'],
 ];
 
 class DefaultGraphSequence<T> {
@@ -263,7 +264,8 @@ function renderGraphSvg(
     time: (index: number) => (points[index].time - t0) / 60000,
     distance: (index: number) => km[index],
     altitude: (index: number) => points[index].ele,
-    pace: (index: number) => pace[index]
+    pace: (index: number) => pace[index],
+    speed: (index: number) => (60 * 60) / pace[index],
   } satisfies Record<YAxis, (index: number) => number>)[yAxis];
 
   const data = {
