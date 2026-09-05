@@ -176,45 +176,74 @@ const Y_OPTIONS: ReadonlyArray<[YAxis, string]> = [
   ['pace', 'Pace'],
 ];
 
+class DefaultGraphSequence<T> {
+  private currentIndex: number = 0;
+
+  constructor(private readonly items: T[]) {
+    if (items.length === 0) {
+      throw new Error('Sequence must contain at least one item.');
+    }
+  }
+
+  getNext(): T {
+    const item = this.items[this.currentIndex];
+    this.currentIndex = (this.currentIndex + 1) % this.items.length;
+    return item;
+  }
+}
+
+interface GraphConfig {
+  x: XAxis;
+  y: YAxis;
+}
+
 function createSelect<T extends string>(
-    labelText: string,
-    options: ReadonlyArray<[T, string]>,
-    ): {label: HTMLLabelElement; select: HTMLSelectElement} {
+    labelText: string, options: ReadonlyArray<[T, string]>,
+    initialValue: T): {label: HTMLLabelElement; select: HTMLSelectElement} {
   const label = document.createElement('label');
   label.append(`${labelText} `);
   const select = label.appendChild(document.createElement('select'));
-  options.forEach(([value, text]) => {
-    const option = document.createElement('option');
-    option.value = value;
-    option.textContent = text;
-    select.appendChild(option);
-  });
+  options.forEach(
+      ([value, text]) =>
+          select.appendChild(Object.assign(document.createElement('option'), {
+            value: value,
+            textContent: text,
+            selected: value === initialValue
+          })));
   return {label, select};
 }
 
-function newGraph(containerDiv: HTMLDivElement, points: TrackPoint[]): void {
+function newGraph(
+    containerDiv: HTMLDivElement, points: TrackPoint[],
+    graphSequence: DefaultGraphSequence<GraphConfig>): void {
   const form = containerDiv.appendChild(document.createElement('form'));
   const graph = containerDiv.appendChild(document.createElement('div'));
   graph.classList.add('hike-plot');
 
-  const x = createSelect('X', X_OPTIONS);
-  const y = createSelect('Y', Y_OPTIONS);
+  const config: GraphConfig = graphSequence.getNext();
+  const x = createSelect('X', X_OPTIONS, config.x);
+  const y = createSelect('Y', Y_OPTIONS, config.y);
   form.append(x.label, '\n', y.label);
 
-  const update = () => {
-    renderGraphSvg(
-        graph, x.select.value as XAxis, y.select.value as YAxis, points);
-  };
+  const update = () => renderGraphSvg(
+      graph, x.select.value as XAxis, y.select.value as YAxis, points);
   form.addEventListener('change', update);
   update();
 }
 
 export function renderGraphForm(
     containerDiv: HTMLDivElement, points: TrackPoint[]): void {
+  const graphDefaults = new DefaultGraphSequence<GraphConfig>([
+    {x: 'time', y: 'pace'},
+    {x: 'time', y: 'altitude'},
+    {x: 'distance', y: 'altitude'},
+    {x: 'time', y: 'distance'},
+  ]);
   containerDiv
       .appendChild(Object.assign(document.createElement('button'), {
         textContent: 'Additional Graph',
-        onclick: (event: MouseEvent) => newGraph(containerDiv, points)
+        onclick: (event: MouseEvent) =>
+            newGraph(containerDiv, points, graphDefaults)
       }))
       .click();
 }
