@@ -55,7 +55,7 @@ div.hike-plot text.tick-y {
   text-anchor: end;
   dominant-baseline: middle;
 }
-div.hike-plot text.tick-x {
+div.hike-plot text.tick-x, div.hike-plot text.label-y {
   text-anchor: middle;
 }
 div.hike-plot text {
