@@ -161,16 +161,24 @@ function niceStep(range: number, target: number): number {
   return 10 * pow;
 }
 
-type XAxis = 'time'|'distance';
-type YAxis = 'time'|'distance'|'altitude'|'pace'|'speed';
+const X_AXES = ['time', 'distance'] as const;
+const Y_AXES =
+    ['time', 'distance', 'altitude', 'altitudeRelative', 'pace', 'speed'] as
+    const;
+type XAxis = (typeof X_AXES)[number];
+type YAxis = (typeof Y_AXES)[number];
 
-const AXIS_OPTIONS: ReadonlyArray<[XAxis | YAxis, string]> = [
-  ['time', 'Time'],
-  ['distance', 'Distance (km)'],
-  ['altitude', 'Altitude (masl)'],
-  ['pace', 'Pace (time/km)'],
-  ['speed', 'Speed (km/h)'],
-];
+const AXIS_LABELS: Record<string, string> = {
+  time: 'Time',
+  distance: 'Distance (km)',
+  altitude: 'Altitude (masl)',
+  altitudeRelative: 'δ Altitude (masl)',
+  pace: 'Pace (time/km)',
+  speed: 'Speed (km/h)',
+};
+
+const getOptions = <T extends string>(axes: ReadonlyArray<T>) =>
+    axes.map(axis => [axis, AXIS_LABELS[axis]] as [T, string]);
 
 class DefaultGraphSequence<T> {
   private currentIndex: number = 0;
@@ -193,10 +201,9 @@ interface GraphConfig {
   y: YAxis;
 }
 
-function createSelect(
-    labelText: string, options: ReadonlyArray<[XAxis | YAxis, string]>,
-    initialValue: XAxis|
-    YAxis): {label: HTMLLabelElement; select: HTMLSelectElement} {
+function createSelect<T extends string>(
+    labelText: string, options: ReadonlyArray<[T, string]>,
+    initialValue: T): {label: HTMLLabelElement; select: HTMLSelectElement} {
   const label = document.createElement('label');
   label.append(`${labelText} `);
   const select = label.appendChild(document.createElement('select'));
@@ -218,8 +225,8 @@ function newGraph(
   graph.classList.add('hike-plot');
 
   const config: GraphConfig = graphSequence.getNext();
-  const x = createSelect('X', AXIS_OPTIONS, config.x);
-  const y = createSelect('Y', AXIS_OPTIONS, config.y);
+  const x = createSelect<XAxis>('X', getOptions(X_AXES), config.x);
+  const y = createSelect<YAxis>('Y', getOptions(Y_AXES), config.y);
   form.append(x.label, '\n', y.label);
 
   const update = () => renderGraphSvg(
@@ -254,10 +261,11 @@ function renderGraphSvg(
   const pace = smooth(secondsPerKm(points));
 
   const accessors = {
-    time: (index: number) => points[index].time,
+    time: (index: number) => points[index].time - points[0].time,
     distance: (index: number) => km[index],
     altitude: (index: number) => points[index].ele,
-    pace: (index: number) => pace[index],
+    altitudeRelative: (index: number) => points[index].ele - points[0].ele,
+    pace: (index: number) => 1000 * pace[index],
     speed: (index: number) => (60 * 60) / pace[index],
   } satisfies Record<XAxis|YAxis, (index: number) => number>;
   const xValue = accessors[xAxis];
@@ -266,14 +274,19 @@ function renderGraphSvg(
   const data = {
     [yAxis]: points.map((p, i) => [xValue(i), yValue(i)] as [number, number])
   };
+  const durationAxes = ['time', 'pace'];
   graphDiv.innerHTML = lineplot(
       new SvgWriter({width: 700, height: 220}), new XYPlot({
-        xLabel: AXIS_OPTIONS[xAxis],
-        yLabel: AXIS_OPTIONS[yAxis],
-        xAxisValues:
-            {maxCount: 10, isDuration: xAxis === 'time' ? true : undefined},
-        yAxisValues:
-            {maxCount: 10, isDuration: yAxis === 'time' ? true : undefined},
+        xLabel: AXIS_LABELS[xAxis],
+        yLabel: AXIS_LABELS[yAxis],
+        xAxisValues: {
+          maxCount: 10,
+          isDuration: durationAxes.includes(xAxis) ? true : undefined
+        },
+        yAxisValues: {
+          maxCount: 10,
+          isDuration: durationAxes.includes(yAxis) ? true : undefined
+        },
         margins: {top: 12, bottom: 36, left: 90, right: 16}
       }),
       data);
