@@ -47,15 +47,15 @@ div.hike-plot rect.labels-exp {
   stroke-width: 0;
 }
 
-div.hike-plot line.tick {
+div.hike-plot line.grid-line {
   stroke: var(--bg-mild);
   stroke-width: 1px;
 }
-div.hike-plot text.label-y {
+div.hike-plot text.tick-y {
   text-anchor: end;
   dominant-baseline: middle;
 }
-div.hike-plot text.label-x {
+div.hike-plot text.tick-x {
   text-anchor: middle;
 }
 div.hike-plot text {
