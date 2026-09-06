@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "gallery.js",
   "scripts": {
-    "build": "tsc --noEmit && esbuild src/hike.ts src/gallery.ts --bundle --format=esm --outdir=dist",
+    "build": "tsc --noEmit && esbuild src/hike.ts src/gallery.ts --bundle --format=esm --minify --outdir=dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
