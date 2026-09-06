@@ -252,12 +252,11 @@ export function renderGraphForm(
 function renderGraphSvg(
     graphDiv: HTMLElement, xAxis: XAxis, yAxis: YAxis,
     points: TrackPoint[]): void {
-  const t0 = points[0].time;
   const km = cumulativeDistances(points).map((d) => d / 1000);
   const pace = smooth(secondsPerKm(points));
 
   const accessors = {
-    time: (index: number) => (points[index].time - t0) / 60000,
+    time: (index: number) => points[index].time,
     distance: (index: number) => km[index],
     altitude: (index: number) => points[index].ele,
     pace: (index: number) => pace[index],
@@ -273,15 +272,11 @@ function renderGraphSvg(
       new SvgWriter({width: 700, height: 220}), new XYPlot({
         xLabel: xAxis,
         yLabel: yAxis,
-        xAxisValues: {
-          maxCount: 10,
-          // timeFormat: xAxis === 'time' ? {timeStyle: 'short'} : undefined
-        },
-        yAxisValues: {
-          maxCount: 10,
-          // timeFormat: yAxis === 'time' ? {timeStyle: 'short'} : undefined
-        },
-        margins: {top: 12, bottom: 36, left: 60, right: 16}
+        xAxisValues:
+            {maxCount: 10, isDuration: xAxis === 'time' ? true : undefined},
+        yAxisValues:
+            {maxCount: 10, isDuration: yAxis === 'time' ? true : undefined},
+        margins: {top: 12, bottom: 36, left: 90, right: 16}
       }),
       data);
 }
