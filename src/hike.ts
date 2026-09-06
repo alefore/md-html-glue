@@ -164,17 +164,12 @@ function niceStep(range: number, target: number): number {
 type XAxis = 'time'|'distance';
 type YAxis = 'time'|'distance'|'altitude'|'pace'|'speed';
 
-const X_OPTIONS: ReadonlyArray<[XAxis, string]> = [
+const AXIS_OPTIONS: ReadonlyArray<[XAxis | YAxis, string]> = [
   ['time', 'Time'],
-  ['distance', 'Distance'],
-];
-
-const Y_OPTIONS: ReadonlyArray<[YAxis, string]> = [
-  ['time', 'Time'],
-  ['distance', 'Distance'],
-  ['altitude', 'Altitude'],
+  ['distance', 'Distance (km)'],
+  ['altitude', 'Altitude (masl)'],
   ['pace', 'Pace (time/km)'],
-  ['speed', 'Speed'],
+  ['speed', 'Speed (km/h)'],
 ];
 
 class DefaultGraphSequence<T> {
@@ -198,9 +193,10 @@ interface GraphConfig {
   y: YAxis;
 }
 
-function createSelect<T extends string>(
-    labelText: string, options: ReadonlyArray<[T, string]>,
-    initialValue: T): {label: HTMLLabelElement; select: HTMLSelectElement} {
+function createSelect(
+    labelText: string, options: ReadonlyArray<[XAxis | YAxis, string]>,
+    initialValue: XAxis|
+    YAxis): {label: HTMLLabelElement; select: HTMLSelectElement} {
   const label = document.createElement('label');
   label.append(`${labelText} `);
   const select = label.appendChild(document.createElement('select'));
@@ -222,8 +218,8 @@ function newGraph(
   graph.classList.add('hike-plot');
 
   const config: GraphConfig = graphSequence.getNext();
-  const x = createSelect('X', X_OPTIONS, config.x);
-  const y = createSelect('Y', Y_OPTIONS, config.y);
+  const x = createSelect('X', AXIS_OPTIONS, config.x);
+  const y = createSelect('Y', AXIS_OPTIONS, config.y);
   form.append(x.label, '\n', y.label);
 
   const update = () => renderGraphSvg(
@@ -240,6 +236,8 @@ export function renderGraphForm(
     {x: 'distance', y: 'altitude'},
     {x: 'time', y: 'distance'},
   ]);
+  containerDiv.appendChild(
+      Object.assign(document.createElement('h3'), {textContent: 'Graphs'}));
   containerDiv
       .appendChild(Object.assign(document.createElement('button'), {
         textContent: 'Additional Graph',
@@ -270,8 +268,8 @@ function renderGraphSvg(
   };
   graphDiv.innerHTML = lineplot(
       new SvgWriter({width: 700, height: 220}), new XYPlot({
-        xLabel: xAxis,
-        yLabel: yAxis,
+        xLabel: AXIS_OPTIONS[xAxis],
+        yLabel: AXIS_OPTIONS[yAxis],
         xAxisValues:
             {maxCount: 10, isDuration: xAxis === 'time' ? true : undefined},
         yAxisValues:
@@ -294,6 +292,8 @@ function main(): void {
   }
   headers[1].before(container);
 
+  container.appendChild(
+      Object.assign(document.createElement('h3'), {textContent: 'Map'}));
   renderMap(
       container.appendChild(
           Object.assign(document.createElement('div'), {id: 'hike-map'})),
