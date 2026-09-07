@@ -32,7 +32,12 @@ function compare(
     a: HTMLTableRowElement, b: HTMLTableRowElement, column: number): number {
   const [x, y] =
       [a, b].map((row) => row.cells[column]?.textContent?.trim() ?? '');
-  return isNaN(parseFloat(x)) || isNaN(parseFloat(y)) ?
+  return isNaN(parseFloat(x)) || isNaN(parseFloat(y)) ||
+          suffix(x) !== suffix(y) ?
       x.localeCompare(y) :
       parseFloat(x) - parseFloat(y);
+}
+
+function suffix(text: string): string {
+  return text.replace(/^[+-]?\d*\.?\d+(e[+-]?\d+)?/i, '');
 }
