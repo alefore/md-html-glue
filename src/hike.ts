@@ -8,12 +8,123 @@
 // <h2> headers; the map and profiles are inserted before the second <h2>.
 
 import * as L from 'leaflet';
-import {lineplot, SvgWriter, XYPlot} from 'mini_svg';
+import {formatDuration, lineplot, SvgWriter, XYPlot} from 'mini_svg';
 
 interface TrackPoint {
   latLng: L.LatLng;
   ele: number;   // meters over sea level
   time: number;  // milliseconds since epoch
+}
+
+function interpolate(a: TrackPoint, b: TrackPoint, t: number): TrackPoint {
+  const lerp = (x: number, y: number) => x + t * (y - x);
+  return {
+    latLng: L.latLng(
+        lerp(a.latLng.lat, b.latLng.lat), lerp(a.latLng.lng, b.latLng.lng)),
+    ele: lerp(a.ele, b.ele),
+    time: lerp(a.time, b.time),
+  };
+}
+
+interface Segment {
+  from: TrackPoint;
+  to: TrackPoint;
+  horizontal: number;  // m
+  vertical: number;    // m, signed
+  seconds: number;
+}
+
+interface Limits {
+  jitter: number;    // m; 3D displacement below which a segment is never judged
+  maxGrade: number;  // rise/run
+  maxSpeed: number;  // m/s, horizontal
+  maxVerticalSpeed: number;  // m/s
+}
+
+const WALKING: Limits = {
+  jitter: 15,
+  maxGrade: 1.5,         // ~56°; steeper than any trail or staircase
+  maxSpeed: 3.5,         // ~12.6 km/h; a run, not a hike
+  maxVerticalSpeed: 0.6  // ~2160 m/h; beyond sustained human ascent
+};
+
+
+function toSegments(points: readonly TrackPoint[]): Segment[] {
+  const out: Segment[] = [];
+  for (let i = 1; i < points.length; i++) {
+    const from = points[i - 1], to = points[i];
+    out.push({
+      from,
+      to,
+      horizontal: from.latLng.distanceTo(to.latLng),
+      vertical: to.ele - from.ele,
+      seconds: (to.time - from.time) / 1000,
+    });
+  }
+  return out;
+}
+
+function onFoot(s: Segment, l: Limits): boolean {
+  const rise = Math.abs(s.vertical);
+  if (Math.hypot(s.horizontal, rise) < l.jitter) return true;
+  const dt = Math.max(s.seconds, 1);
+  return rise / Math.max(s.horizontal, 1) <= l.maxGrade &&
+      s.horizontal / dt <= l.maxSpeed && rise / dt <= l.maxVerticalSpeed;
+}
+
+function sum<T>(items: readonly T[], f: (item: T) => number): number {
+  return items.reduce((acc, item) => acc + f(item), 0);
+}
+
+class Stats {
+  readonly walked: readonly Segment[];
+  readonly jumps: readonly Segment[];
+
+  constructor(segments: readonly Segment[], limits: Limits = WALKING) {
+    const walked: Segment[] = [];
+    const jumps: Segment[] = [];
+    segments.forEach((s) => {
+      (onFoot(s, limits) ? walked : jumps).push(s);
+    });
+    this.walked = walked;
+    this.jumps = jumps;
+  }
+
+  distance2d(): number {
+    return sum(this.walked, s => s.horizontal);
+  }
+
+  distance3d(): number {
+    return sum(this.walked, s => Math.hypot(s.horizontal, s.vertical));
+  }
+
+  ascent(): number {
+    return sum(this.walked, s => Math.max(s.vertical, 0));
+  }
+
+  descent(): number {
+    return sum(this.walked, s => Math.max(-s.vertical, 0));
+  }
+
+  /** First point to last point, including time spent in jumps. */
+  elapsedSeconds(): number {
+    return sum(this.walked, s => s.seconds) + sum(this.jumps, s => s.seconds);
+  }
+
+  /** Time in on-foot segments at or above minSpeed (m/s). */
+  movingSeconds(minSpeed = 0.5): number {
+    return sum(
+        this.walked.filter(
+            s => s.seconds > 0 && s.horizontal / s.seconds >= minSpeed),
+        s => s.seconds,
+    );
+  }
+
+  movingTimePercentage(minSpeed = 0.5): number {
+    const elapsed = this.elapsedSeconds();
+    if (elapsed === 0) throw new Error('Track has zero duration');
+    return 100 * this.movingSeconds(minSpeed) / elapsed;
+  }
 }
 
 function parseTrack(dataIslandId: string): TrackPoint[] {
@@ -53,6 +164,7 @@ function parseTrack(dataIslandId: string): TrackPoint[] {
   }
   return points;
 }
+
 
 // Cumulative distance from start, in meters, per point.
 function cumulativeDistances(points: TrackPoint[]): number[] {
@@ -292,6 +404,117 @@ function renderGraphSvg(
       data);
 }
 
+const showKm = (value: number): string => {
+  return `${(value / 1000).toFixed(1)} km`;
+};
+
+function addStats(container: HTMLDivElement, points: TrackPoint[]): void {
+  container.appendChild(
+      Object.assign(document.createElement('h3'), {textContent: 'Stats'}));
+  const statsList = container.appendChild(document.createElement('dl'));
+  const totalStats = new Stats(toSegments(points));
+  const addStat = (name: string, value: string): void => {
+    statsList.append(
+        Object.assign(document.createElement('dt'), {textContent: name}),
+        Object.assign(document.createElement('dd'), {textContent: value}));
+  };
+  const showPace = (distanceMeters: number, timeSeconds: number): string => {
+    const distanceKm = distanceMeters / 1000;
+    return `${formatDuration({
+      durationMs: 1000 * timeSeconds / distanceKm
+    })}/km (${(distanceKm / (timeSeconds / (60 * 60))).toFixed(1)} km/h)`
+  };
+
+  addStat('Start', new Date(points[0].time).toLocaleString());
+  const distance3d = totalStats.distance3d();
+  addStat(
+      'Distance',
+      `${showKm(distance3d)}  (2D: ${showKm(totalStats.distance2d())})`);
+  const totalTime = totalStats.elapsedSeconds();
+  const movingTime = totalStats.movingSeconds();
+  addStat('Total time', `${formatDuration({durationMs: 1000 * totalTime})}`);
+  addStat('Moving time', `${formatDuration({
+            durationMs: 1000 * movingTime
+          })} (${(100 * movingTime / totalTime).toFixed(1)}%)`);
+  addStat('Speed', showPace(distance3d, totalTime));
+  addStat('Moving Speed', showPace(distance3d, movingTime));
+  addStat(
+      'Elevation',
+      `↑${totalStats.ascent().toFixed(0)}m ↓${
+          totalStats.descent().toFixed(0)}m`);
+}
+
+function splitByDistance(
+    points: readonly TrackPoint[],
+    meters: number,
+    limits: Limits = WALKING,
+    ): TrackPoint[][] {
+  if (meters <= 0) throw new Error(`Interval must be positive, got ${meters}`);
+  const first = points[0];
+  if (first === undefined) throw new Error('Empty track');
+
+  const intervals: TrackPoint[][] = [];
+  let current: TrackPoint[] = [first];
+  let remaining = meters;
+
+  for (const s of toSegments(points)) {
+    const h = onFoot(s, limits) ? s.horizontal : 0;
+    let covered = 0;  // fraction of `s` already handed out
+    while ((1 - covered) * h >= remaining) {
+      covered = Math.min(covered + remaining / h, 1);
+      const cut = interpolate(s.from, s.to, covered);
+      current.push(cut);
+      intervals.push(current);
+      current = [cut];
+      remaining = meters;
+    }
+    remaining -= (1 - covered) * h;
+    if (covered < 1) current.push(s.to);
+  }
+  if (current.length >= 2) intervals.push(current);
+  return intervals;
+}
+
+function addIntervals(
+    container: HTMLDivElement, points: readonly TrackPoint[]): void {
+  container.appendChild(
+      Object.assign(document.createElement('h3'), {textContent: 'Intervals'}));
+  const table = container.appendChild(Object.assign(
+      document.createElement('table'), {classList: 'hike-intervals'}));
+  const theadRow = table.appendChild(document.createElement('thead'))
+                       .appendChild(document.createElement('tr'));
+  const intervals =
+      splitByDistance(points, 1000).map(p => new Stats(toSegments(p)));
+  const displayMovingPercent =
+      intervals.some(s => s.elapsedSeconds() > s.movingSeconds());
+
+  const headers = ['Interval (km)', 'Start', 'Duration', '↑m', '↓m'];
+  if (displayMovingPercent) headers.push('Moving');
+  headers.forEach(
+      (name) => theadRow.appendChild(
+          Object.assign(document.createElement('th'), {textContent: name})));
+
+  const tbody = table.appendChild(document.createElement('tbody'));
+  intervals.map((stats, index) => {
+    const row = tbody.appendChild(document.createElement('tr'));
+    const addCell = (value: string): void => {
+      row.appendChild(
+          Object.assign(document.createElement('td'), {textContent: value}));
+    };
+    const idTail =
+        stats.distance2d() >= 999.99 ? '' : ` (${showKm(stats.distance2d())})`;
+    addCell(`${index + 1}${idTail}`);
+    addCell(new Date(stats.walked[0].from.time).toLocaleTimeString());
+    addCell(formatDuration({durationMs: 1000 * stats.elapsedSeconds()}));
+    addCell(`${stats.ascent().toFixed(0)}`);
+    addCell(`${stats.descent().toFixed(0)}`);
+    if (displayMovingPercent) {
+      addCell(`${
+          (100 * stats.movingSeconds() / stats.elapsedSeconds()).toFixed(1)}%`);
+    }
+  });
+}
+
 function main(): void {
   const points = parseTrack('hike-data');
 
@@ -304,6 +527,9 @@ function main(): void {
         `the map, found ${headers.length}.`);
   }
   headers[1].before(container);
+
+  addStats(container, points);
+  addIntervals(container, points);
 
   container.appendChild(
       Object.assign(document.createElement('h3'), {textContent: 'Map'}));

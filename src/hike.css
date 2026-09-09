@@ -61,3 +61,7 @@ div.hike-plot text.tick-x, div.hike-plot text.label-y {
 div.hike-plot text {
   fill: var(--text-dim);
 }
+
+table.hike-intervals td {
+  text-align: right;
+}
