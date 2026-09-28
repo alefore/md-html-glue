@@ -7,7 +7,7 @@
 set -e
 
 mkdir -p public/{static/images,out}
-cp ~/knit/dist/swipe.js ~/gallery/src/gallery.css ~/gallery/dist/gallery.js public/static
+cp ~/gallery/dist/swipe.js ~/gallery/src/gallery.css ~/gallery/dist/gallery.js public/static
 for image in $(cat images/public.txt)
 do
   echo "Publish image: $image"
