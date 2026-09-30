@@ -6,12 +6,16 @@
 
 set -e
 
-mkdir -p public/{static/images,out}
-cp ~/gallery/dist/swipe.js ~/gallery/src/gallery.css ~/gallery/dist/gallery.js public/static
+BASE=~/gallery
+BASE_SRC=$BASE/src
+BASE_DIST=$BASE/dist
+
+mkdir -p public/{static/images,out{,/images}}
+cp $BASE_DIST/*.js $BASE_SRC/css/*.css public/out
 for image in $(cat images/public.txt)
 do
   echo "Publish image: $image"
-  cp images/$image public/static/images/$image
+  cp images/$image public/out/images/$image
 done
 
 function process_markdown_file {
@@ -23,11 +27,11 @@ function process_markdown_file {
   local reading_time=""
   extra_filters=""
   for scope in $(grep '^Scope:' "$file" | sed 's/^Scope: *//'); do
-    if [[ -f "public/static/${scope}.css" ]]; then
+    if [[ -f "$BASE_SRC/css/${scope}.css" ]]; then
       echo "  -> Found CSS for scope: ${scope}"
       extra_css_args+=" --css=${scope}.css"
     fi
-    if [[ -f "public/static/${scope}.js" ]]; then
+    if [[ -f "$BASE_DIST/${scope}.js" ]]; then
       echo "  -> Found JS for scope: ${scope}"
       extra_js_tags+="<script type=module src=\"${scope}.js\"></script>"
     fi
@@ -40,10 +44,10 @@ function process_markdown_file {
       reading_time="$mins min"
     fi
     if [[ ${scope} = "gallery" ]]; then
-      extra_filters="--filter=public/src/gallery-filter.py"
+      extra_filters="--filter=$BASE_SRC/gallery-filter.py"
     fi
 
-    lua_filter_path="public/src/${scope}-filter.lua"
+    lua_filter_path="$BASE_SRC/pandoc-lua-filters/${scope}-filter.lua"
     if [[ -f "${lua_filter_path}" ]]; then
       if [[ -n "${extra_filters}" ]]; then
         extra_filters+=" --lua-filter=${lua_filter_path}"
@@ -54,18 +58,18 @@ function process_markdown_file {
   done
 
   title=$(head -1 $file | sed 's/^#* *//')
-  pandoc -s -f markdown \
+  PATH="$HOME/local/bin:$PATH" pandoc -s -f markdown \
     --template=public/src/template.html \
     --metadata title="$title" \
     --metadata post_date="$POST_DATE" \
     --metadata reading_time="$reading_time" \
     --css=style-base.css --css=style.css $extra_css_args \
-    --lua-filter=public/src/link-fixer.lua \
-    --lua-filter=public/src/remove-tags-section.lua \
-    --lua-filter=public/src/post-date.lua \
-    --lua-filter=public/src/reading-time.lua \
-    --lua-filter=public/src/image-filter.lua \
-    --lua-filter=public/src/first-h2-filter.lua \
+    --lua-filter=$BASE_SRC/pandoc-lua-filters/link-fixer.lua \
+    --lua-filter=$BASE_SRC/pandoc-lua-filters/remove-tags-section.lua \
+    --lua-filter=$BASE_SRC/pandoc-lua-filters/post-date.lua \
+    --lua-filter=$BASE_SRC/pandoc-lua-filters/reading-time.lua \
+    --lua-filter=$BASE_SRC/pandoc-lua-filters/image-filter.lua \
+    --lua-filter=$BASE_SRC/pandoc-lua-filters/first-h2-filter.lua \
     $extra_filters \
     -B <(echo '<main>') \
     -A <(echo "</main><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js'></script>${extra_js_tags}") \
