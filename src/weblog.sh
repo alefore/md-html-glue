@@ -59,7 +59,7 @@ function process_markdown_file {
 
   title=$(head -1 $file | sed 's/^#* *//')
   PATH="$HOME/local/bin:$PATH" pandoc -s -f markdown \
-    --template=public/src/template.html \
+    --template=$BASE_SRC/template.html \
     --metadata title="$title" \
     --metadata post_date="$POST_DATE" \
     --metadata reading_time="$reading_time" \
