@@ -97,6 +97,7 @@ li::marker, a, h1, h2, h3 {
 a:hover {
   background-color: var(--text);
   color: var(--bg);
+  text-decoration: underline;
 }
 div#footer {
   border-top: 1px dashed var(--text-dim);
@@ -124,6 +125,52 @@ td, th {
   padding-left: 0.5em;
   padding-right: 0.5em;
 }
+
+ul:has(.media-snippet) {
+  list-style: none;
+  padding-left: 0;
+}
+li:has(.media-snippet) {
+  display: block;
+  margin-bottom: 2.25em;
+}
+.media-title {
+  display: inline-block;
+  font-size: 1.2em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.media-title a {
+  text-decoration: none;
+}
+.media-icon {
+  display: inline-block;
+  width: 2em;
+}
+.media-byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75em;
+  padding-left: calc(2em / 0.85);
+  font-size: 0.85em;
+  margin-top: 0.15em;
+}
+.media-byline-weak, .log-date {
+  opacity: 0.65;
+}
+.log-date {
+  margin-left: auto;
+}
+.media-byline:empty { display: none; }
+.media-snippet {
+  display: block;
+  border-left: 1px solid var(--text-accent);
+  margin: 0 0 0 0.7em;
+  padding: 0.5em 0em 1em 1.3em;
+  border-radius: 0 18px 18px 18px;
+}
+
 @media (prefers-color-scheme: light) {
   hr {
     border: none;

@@ -57,7 +57,7 @@ function process_markdown_file {
     fi
   done
 
-  title=$(head -1 $file | sed 's/^#* *//')
+  title=$(grep '^# ' $file | head -1 | sed 's/^#* *//')
   PATH="$HOME/local/bin:$PATH" pandoc -s -f markdown \
     --template=$BASE_SRC/template.html \
     --metadata title="$title" \
@@ -70,6 +70,7 @@ function process_markdown_file {
     --lua-filter=$BASE_SRC/pandoc-lua-filters/reading-time.lua \
     --lua-filter=$BASE_SRC/pandoc-lua-filters/image-filter.lua \
     --lua-filter=$BASE_SRC/pandoc-lua-filters/first-h2-filter.lua \
+    --filter $BASE_SRC/links_summary.py \
     $extra_filters \
     -B <(echo '<main>') \
     -A <(echo "</main><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js'></script>${extra_js_tags}") \
