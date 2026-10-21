@@ -1,5 +1,5 @@
 [📚]{.media-icon}[[*${title}*](${target})]{.media-title}
-[${author}
+[[${author}
 [(${publication_date})]{.media-byline-weak}
-[${status_date}]{.log-date}]{.media-byline}
-[${summary}]{.media-snippet}
+[${rating} ${status_date}]{.log-date}]{.media-byline}
+${summary}]{.media-snippet}

@@ -57,10 +57,10 @@ function process_markdown_file {
     fi
   done
 
-  title=$(grep '^# ' $file | head -1 | sed 's/^#* *//')
+  pagetitle=$(grep -m1 '^# ' "$file" | sed 's/^#* *//' | pandoc -f markdown -t plain --wrap=none)
   PATH="$HOME/local/bin:$PATH" pandoc -s -f markdown \
     --template=$BASE_SRC/template.html \
-    --metadata title="$title" \
+    --metadata pagetitle="$pagetitle" \
     --metadata post_date="$POST_DATE" \
     --metadata reading_time="$reading_time" \
     --css=style-base.css --css=style.css $extra_css_args \

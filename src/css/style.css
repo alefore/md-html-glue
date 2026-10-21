@@ -132,7 +132,7 @@ ul:has(.media-snippet) {
 }
 li:has(.media-snippet) {
   display: block;
-  margin-bottom: 2.25em;
+  margin-bottom: 1.25em;
 }
 .media-title {
   display: inline-block;
@@ -147,14 +147,20 @@ li:has(.media-snippet) {
   display: inline-block;
   width: 2em;
 }
+.media-title-weak {
+  opacity: 0.65;
+  display: inline-block;
+  margin-left: auto;
+}
 .media-byline {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0 0.75em;
-  padding-left: calc(2em / 0.85);
+  padding-left: 0;
   font-size: 0.85em;
-  margin-top: 0.15em;
+  margin-top: 0;
+  margin-bottom: 0.8em;
 }
 .media-byline-weak, .log-date {
   opacity: 0.65;
@@ -167,7 +173,7 @@ li:has(.media-snippet) {
   display: block;
   border-left: 1px solid var(--text-accent);
   margin: 0 0 0 0.7em;
-  padding: 0.5em 0em 1em 1.3em;
+  padding: 0.5em 0em 0.7em 1.3em;
   border-radius: 0 18px 18px 18px;
 }
 
