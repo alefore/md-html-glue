@@ -71,6 +71,7 @@ function process_markdown_file {
     --lua-filter=$BASE_SRC/pandoc-lua-filters/image-filter.lua \
     --lua-filter=$BASE_SRC/pandoc-lua-filters/first-h2-filter.lua \
     --filter $BASE_SRC/links_summary.py \
+    --filter $BASE_SRC/rating_filter.py \
     $extra_filters \
     -B <(echo '<main>') \
     -A <(echo "</main><script src='https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js'></script>${extra_js_tags}") \
