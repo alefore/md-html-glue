@@ -222,24 +222,24 @@ li:has(> .blurb-title-header) {
 
 .blurb-title-header {
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
-  gap: 0 0.75em;
+  gap: 0 0.5em;
   font-size: 0.85em;
 }
 
 .blurb-date, .blurb-media-date, .blurb-media-type {
   opacity: 0.65;
 }
-
+.blurb-media-type {
+  margin-right: 0.4em;
+}
 .blurb-rating {
+  margin-left: auto;
   letter-spacing: 0.1em;
 }
-
 .blurb-rating:empty {
   display: none;
 }
-
 .blurb-title-name {
   display: block;
   margin: 0.15em 0 0.25em;
@@ -273,12 +273,15 @@ li:has(> .blurb-title-header) {
 }
 
 li:has(> .blurb-title-header) {
-  margin: 0 0 0.6em;
+  margin: 0 0 0.9em;
 }
 
-li:has(> .blurb-title-header) + li:has(> .blurb-title-header) {
-  border-top: 1px dashed var(--text-dim);
-  padding-top: 1.6em;
+li:has(> .blurb-title-header) + li:has(> .blurb-title-header)::before {
+  content: "";
+  display: block;
+  width: 50%;
+  border-top: 1px solid color-mix(in srgb, var(--text) 15%, transparent);
+  margin: 0 auto 1.6em;
 }
 
 .blurb-media-type {

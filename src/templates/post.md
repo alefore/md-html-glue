@@ -1,3 +1,5 @@
-[${media_icon}]{.media-icon}[[*${title}*](${target})]{.media-title}
-[[[${log_date}]{.log-date}]{.media-byline}
-${summary}]{.media-snippet}
+[[${media_icon}]{.blurb-media-type}
+[${log_date}]{.blurb-date}
+]{.blurb-title-header}
+[*${title}*](${target}){.blurb-title-name}
+${summary}
