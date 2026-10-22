@@ -288,3 +288,5 @@ li:has(> .blurb-title-header) + li:has(> .blurb-title-header)::before {
   filter: grayscale(1);
   opacity: 0.75;
 }
+
+.rating .off { opacity: 0.2; }
