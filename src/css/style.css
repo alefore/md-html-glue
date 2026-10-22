@@ -272,7 +272,16 @@ li:has(> .blurb-title-header) {
   opacity: 0.65;
 }
 
+li:has(> .blurb-title-header) {
+  margin: 0 0 0.6em;
+}
+
 li:has(> .blurb-title-header) + li:has(> .blurb-title-header) {
   border-top: 1px dashed var(--text-dim);
-  padding-top: 1.25em;
+  padding-top: 1.6em;
+}
+
+.blurb-media-type {
+  filter: grayscale(1);
+  opacity: 0.75;
 }

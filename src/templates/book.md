@@ -3,5 +3,5 @@
 [
 [${media_type}]{.blurb-media-type}[${author}]{.blurb-media-author}
 [${publication_date}]{.blurb-media-date}
-]{.blurb-title-foter}
+]{.blurb-title-footer}
 ${summary}
