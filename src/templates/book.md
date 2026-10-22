@@ -1,5 +1,7 @@
-[📚]{.media-icon}[[*${title}*](${target})]{.media-title}
-[[${author}
-[(${publication_date})]{.media-byline-weak}
-[${rating} ${status_date}]{.log-date}]{.media-byline}
-${summary}]{.media-snippet}
+[[${status_date}]{.blurb-date}[${rating}]{.blurb-rating}]{.blurb-title-header}
+[*${title}*](${target}){.blurb-title-name}
+[
+[${media_type}]{.blurb-media-type}[${author}]{.blurb-media-author}
+[${publication_date}]{.blurb-media-date}
+]{.blurb-title-foter}
+${summary}

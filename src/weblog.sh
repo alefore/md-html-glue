@@ -121,8 +121,9 @@ grep -l '^Visibility: public$' ???.md | caploop process_markdown_file
 mv public/out/3kp.html public/out/index.html
 
 cp -R public/static/. public/out
-if [ -z "$WEBLOG_ONLY_ZIP" ] && command -v wrangler >/dev/null 2>&1; then
-  wrangler pages deploy public/out --project-name text --branch main
+: "${WRANGLER:=wrangler}"
+if [ -z "$WEBLOG_ONLY_ZIP" ] && command -v "$WRANGLER" >/dev/null 2>&1; then
+  "$WRANGLER" pages deploy public/out --project-name text --branch main
 else
   zip -j public/out.zip public/out/*
 fi

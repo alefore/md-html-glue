@@ -203,3 +203,76 @@ li:has(.media-snippet) {
     margin-top: 40svh;
   }
 }
+
+/* ---- Review blurbs ---------------------------------------- */
+
+ul:has(> li > .blurb-title-header) {
+  list-style: none;
+  padding-left: 0;
+}
+
+li:has(> .blurb-title-header) {
+  display: block;
+  margin: 0 0 1.25em;
+}
+
+.blurb-title-footer {
+  margin-bottom: 0.4em;
+}
+
+.blurb-title-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0 0.75em;
+  font-size: 0.85em;
+}
+
+.blurb-date, .blurb-media-date, .blurb-media-type {
+  opacity: 0.65;
+}
+
+.blurb-rating {
+  letter-spacing: 0.1em;
+}
+
+.blurb-rating:empty {
+  display: none;
+}
+
+.blurb-title-name {
+  display: block;
+  margin: 0.15em 0 0.25em;
+  font-size: 1.2em;
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.blurb-title-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.5em;
+  font-size: 0.85em;
+  margin-bottom: 0.4em;
+}
+
+.blurb-media-type:empty,
+.blurb-media-author:empty,
+.blurb-media-date:empty,
+.blurb-title-footer:not(:has(> :not(:empty))) {
+  display: none;
+}
+
+.blurb-title-footer > :not(:empty) ~ :not(:empty)::before {
+  content: "·";
+  content: "·" / "";
+  margin-right: 0.5em;
+  opacity: 0.65;
+}
+
+li:has(> .blurb-title-header) + li:has(> .blurb-title-header) {
+  border-top: 1px dashed var(--text-dim);
+  padding-top: 1.25em;
+}

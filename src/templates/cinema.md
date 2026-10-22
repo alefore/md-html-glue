@@ -1,5 +1,7 @@
-[${cinema_type}]{.media-icon}[[*${title}*](${target})]{.media-title}
-[[${creator}
-[(${release_date})]{.media-byline-weak}
-[${rating} ${seen_date}]{.log-date}]{.media-byline}
-${summary}]{.media-snippet}
+[[${seen_date}]{.blurb-date}[${rating}]{.blurb-rating}]{.blurb-title-header}
+[*${title}*](${target}){.blurb-title-name}
+[
+[${media_type}]{.blurb-media-type}[${creator}]{.blurb-media-author}
+[${release_date}]{.blurb-media-date}
+]{.blurb-title-foter}
+${summary}
