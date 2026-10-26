@@ -1,9 +1,11 @@
-[[${media_type}]{.blurb-media-type}
-[${seen_date}]{.blurb-date}
-[${rating}]{.blurb-rating}]{.blurb-title-header}
-[*${title}*](${target}){.blurb-title-name}
+[
+[${title}](${target}){.blurb-title-name}
+[${media_type}]{.blurb-media-type}
+]{.blurb-media-header}
 [
 [${creator}]{.blurb-media-author}
 [${release_date}]{.blurb-media-date}
-]{.blurb-title-footer}
+[${rating}]{.blurb-rating}
+]{.blurb-media-footer}
 ${summary}
+[${seen_date}]{.blurb-date}

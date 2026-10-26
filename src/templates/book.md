@@ -1,10 +1,11 @@
-[[${media_type}]{.blurb-media-type}
-[${status_date}]{.blurb-date}
-[${rating}]{.blurb-rating}
-]{.blurb-title-header}
-[*${title}*](${target}){.blurb-title-name}
+[
+[${title}](${target}){.blurb-title-name}
+[${media_type}]{.blurb-media-type}
+]{.blurb-media-header}
 [
 [${author}]{.blurb-media-author}
 [${publication_date}]{.blurb-media-date}
-]{.blurb-title-footer}
+[${rating}]{.blurb-rating}
+]{.blurb-media-footer}
 ${summary}
+[${status_date}]{.blurb-date}
